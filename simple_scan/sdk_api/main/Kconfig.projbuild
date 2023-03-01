@@ -1,0 +1,15 @@
+menu "Example Configuration"
+
+    config EXAMPLE_SCAN_LIST_SIZE
+        int "Max size of scan list"
+        range 0 20
+        default 10
+        help
+            The size of array that will be used to retrieve the list of access points.
+
+    config EXAMPLE_SCAN_INTERVAL
+        int "Specifies delay between each scan in seconds"
+        range 0 20
+        default 5
+
+endmenu
