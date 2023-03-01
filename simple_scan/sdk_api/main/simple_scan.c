@@ -5,13 +5,13 @@
  * @date 2023-03-01
  *
  * @note This is very simple scanner using esp8266 chip.
- * Main references for this development is ESPRESSIF's ESP8266 & ESP32 official documentations and
+ * Main references for this development is Espressif's ESP8266 & ESP32 official documentations and
  * SDK source codes.
  */
 
+#include "esp_err.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
-#include <string.h>
 
 #define TAG "WIFI SCAN"
 #define INFO(...) ESP_LOGI(TAG, ##__VA_ARGS__)
@@ -19,7 +19,7 @@
 #define DELAY_IN_SEC(_t) DELAY((_t) / 100)
 
 #define DEFAULT_SCAN_LIST_SIZE CONFIG_EXAMPLE_SCAN_LIST_SIZE
-#define DEFAULT_SCAN_INTERVAL CONFIG_EXAMPLE_TIME_INTERVAL
+#define DEFAULT_SCAN_INTERVAL CONFIG_EXAMPLE_SCAN_INTERVAL
 
 static void print_auth_mode(int authmode)
 {
@@ -150,10 +150,9 @@ static void wifi_scan(void)
      * @details 'esp_wifi_scan' API presents each WIFI Access-points in 'wifi_ap_record' form.
      * @note 'wifi_apt_record_t' stores various AP's data like (SSID, RSSI, Chennal, etc).
      */
-    uint16_t number = DEFAULT_SCAN_LIST_SIZE;
     wifi_ap_record_t ap_info[DEFAULT_SCAN_LIST_SIZE];
+    uint16_t number = DEFAULT_SCAN_LIST_SIZE;
     uint16_t ap_count = 0;
-    memset(ap_info, 0, sizeof(ap_info));
 
     /* Setting Wifi to STA/Client mode*/
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
