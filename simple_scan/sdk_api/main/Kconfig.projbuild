@@ -1,5 +1,9 @@
 menu "Example Configuration"
 
+    config EXAMPLE_LOGGING_TAG
+        string "Default logging tag"
+        default "SIMPLY SCAN"
+
     config EXAMPLE_SCAN_LIST_SIZE
         int "Max size of scan list"
         range 0 20
@@ -9,7 +13,11 @@ menu "Example Configuration"
 
     config EXAMPLE_SCAN_INTERVAL
         int "Specifies delay between each scan in seconds"
-        range 0 20
-        default 5
+        range 5 20
+        default 10
+
+    config EXAMPLE_SCAN_HIDDEN_AP
+        bool "Enable to scan AP whose SSID is hidden"
+        default y
 
 endmenu

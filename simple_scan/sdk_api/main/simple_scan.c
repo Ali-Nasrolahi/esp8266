@@ -13,13 +13,20 @@
 #include "esp_log.h"
 #include "esp_wifi.h"
 
-#define TAG "WIFI SCAN"
-#define INFO(...) ESP_LOGI(TAG, ##__VA_ARGS__)
-#define DELAY(_t) vTaskDelay(_t)
-#define DELAY_IN_SEC(_t) DELAY((_t) / 100)
-
 #define DEFAULT_SCAN_LIST_SIZE CONFIG_EXAMPLE_SCAN_LIST_SIZE
 #define DEFAULT_SCAN_INTERVAL CONFIG_EXAMPLE_SCAN_INTERVAL
+#define DEFAULT_LOGGING_TAG CONFIG_EXAMPLE_LOGGING_TAG
+#define SCAN_HIDDEN_AP CONFIG_EXAMPLE_SCAN_HIDDEN_AP
+
+/**
+ * @brief Returns phy mode.
+ */
+#define PHY_MODE(_ap)                                                                              \
+    (_ap)->phy_11n ? "802.11n"                                                                     \
+                   : ((_ap)->phy_11g ? "802.11g" : ((_ap)->phy_11b ? "802.11b" : "UNKOWN"))
+#define INFO(...) ESP_LOGI(DEFAULT_LOGGING_TAG, ##__VA_ARGS__)
+#define DELAY(_t) vTaskDelay(_t)
+#define DELAY_IN_SEC(_t) DELAY((_t)*100)
 
 static void print_auth_mode(int authmode)
 {
@@ -113,20 +120,24 @@ static void print_cipher_type(int pairwise_cipher, int group_cipher)
  */
 static void print_ap_details(wifi_ap_record_t *ap_list, uint16_t ap_count)
 {
-    for (int i = 0; i < DEFAULT_SCAN_LIST_SIZE && i < ap_count; i++) {
+    for (int i = 0; i < DEFAULT_SCAN_LIST_SIZE && i < ap_count; ++i) {
         INFO("Entry no.%d:\n", i);
-        INFO("SSID \t\t%s", ap_list[i].ssid);
+        INFO("SSID \t\t%s", *ap_list[i].ssid ? (char *)ap_list[i].ssid : "HIDDEN_SSID");
+        INFO("BSSID \t\t" MACSTR, MAC2STR(ap_list[i].bssid));
         INFO("RSSI \t\t%d", ap_list[i].rssi);
-        INFO("Channel \t\t%d", ap_list[i].primary);
+        INFO("Channel \t\t%u", ap_list[i].primary);
+        INFO("PHY \t\t%s", PHY_MODE(ap_list + i));
 
         print_auth_mode(ap_list[i].authmode);
-
         if (ap_list[i].authmode != WIFI_AUTH_WEP)
             print_cipher_type(ap_list[i].pairwise_cipher, ap_list[i].group_cipher);
-        INFO("End OF ENTRY.\n");
+
+        INFO("End of record info.\n");
     }
 }
-
+/**
+ * @brief Starts scanning and displays each found AP's info.
+ */
 static void wifi_scan(void)
 {
     /**
@@ -148,11 +159,16 @@ static void wifi_scan(void)
     /**
      * @brief  we're initializing needed structures for each AP entry.
      * @details 'esp_wifi_scan' API presents each WIFI Access-points in 'wifi_ap_record' form.
-     * @note 'wifi_apt_record_t' stores various AP's data like (SSID, RSSI, Chennal, etc).
+     * @note 'wifi_apt_record_t' stores various AP's data like (SSID, RSSI, Channel, etc).
      */
     wifi_ap_record_t ap_info[DEFAULT_SCAN_LIST_SIZE];
     uint16_t number = DEFAULT_SCAN_LIST_SIZE;
     uint16_t ap_count = 0;
+    wifi_scan_config_t scan_cfg = {0};
+#if SCAN_HIDDEN_AP
+    /// enable to scan AP whose SSID is hidden.
+    scan_cfg.show_hidden = true;
+#endif
 
     /* Setting Wifi to STA/Client mode*/
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -164,7 +180,7 @@ static void wifi_scan(void)
     ESP_ERROR_CHECK(esp_wifi_start());
 
     /// Scan all available APs.
-    esp_wifi_scan_start(NULL, true);
+    esp_wifi_scan_start(&scan_cfg, true);
 
     /// Get AP list found in last scan.
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&number, ap_info));
@@ -172,7 +188,7 @@ static void wifi_scan(void)
     /// Get number of APs found in last scan.
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_count));
 
-    INFO("Total APs scanned = %u\n", ap_count);
+    INFO("Found AP \t\t%u\n", ap_count);
 
     print_ap_details(ap_info, ap_count);
 
